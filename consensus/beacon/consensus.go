@@ -342,7 +342,7 @@ func (beacon *Beacon) Prepare(chain consensus.ChainHeaderReader, header *types.H
 // Finalize implements consensus.Engine and processes withdrawals on top.
 func (beacon *Beacon) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, withdrawals []*types.Withdrawal) {
 	if !beacon.IsPoSHeader(header) {
-		beacon.ethone.Finalize(chain, header, state, txs, uncles, nil)
+		beacon.ethone.Finalize(chain, header, state, txs, uncles, nil) //finalize function without reward calling but with withdrawls
 		return
 	}
 	// Withdrawals processing.
@@ -350,7 +350,8 @@ func (beacon *Beacon) Finalize(chain consensus.ChainHeaderReader, header *types.
 		// Convert amount from gwei to wei.
 		amount := new(big.Int).SetUint64(w.Amount)
 		amount = amount.Mul(amount, big.NewInt(params.GWei))
-		state.AddBalance(w.Address, amount)
+		state.AddBalance(w.Address, amount) //what is withdrawl, where the money is going
+		fmt.Println("++++++++++++++ Amount: ", amount , "++++++++++++++ Address: ", w.Address, "++++++++++++++ Withdrawls: ", w)
 	}
 	// No block reward which is issued by consensus layer instead.
 }
@@ -358,7 +359,9 @@ func (beacon *Beacon) Finalize(chain consensus.ChainHeaderReader, header *types.
 // FinalizeAndAssemble implements consensus.Engine, setting the final state and
 // assembling the block.
 func (beacon *Beacon) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt, withdrawals []*types.Withdrawal) (*types.Block, error) {
+	fmt.Println("__________________ Hello _____________________")
 	if !beacon.IsPoSHeader(header) {
+		fmt.Println("__________________ Inside Hello _____________________")
 		return beacon.ethone.FinalizeAndAssemble(chain, header, state, txs, uncles, receipts, nil)
 	}
 	shanghai := chain.Config().IsShanghai(header.Number, header.Time)

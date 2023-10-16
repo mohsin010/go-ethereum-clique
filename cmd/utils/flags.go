@@ -1519,7 +1519,7 @@ func setMiner(ctx *cli.Context, cfg *miner.Config) {
 	if ctx.IsSet(MinerGasLimitFlag.Name) {
 		cfg.GasCeil = ctx.Uint64(MinerGasLimitFlag.Name)
 	}
-	if ctx.IsSet(MinerGasPriceFlag.Name) {
+	if ctx.IsSet(MinerGasPriceFlag.Name) { //seting gas price , coming from CLI
 		cfg.GasPrice = flags.GlobalBig(ctx, MinerGasPriceFlag.Name)
 	}
 	if ctx.IsSet(MinerRecommitIntervalFlag.Name) {
@@ -1745,6 +1745,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ethconfig.Config) {
 		cfg.Genesis = core.DefaultGoerliGenesisBlock()
 		SetDNSDiscoveryDefaults(cfg, params.GoerliGenesisHash)
 	case ctx.Bool(DeveloperFlag.Name):
+		fmt.Println("======================= Developer Mode =======================")
 		if !ctx.IsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 1337
 		}
@@ -1810,7 +1811,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ethconfig.Config) {
 			chaindb.Close()
 		}
 		if !ctx.IsSet(MinerGasPriceFlag.Name) {
-			cfg.Miner.GasPrice = big.NewInt(1)
+			cfg.Miner.GasPrice = big.NewInt(1) //setting gas price to eth config
 		}
 	default:
 		if cfg.NetworkId == 1 {
@@ -1847,6 +1848,7 @@ func SetDNSDiscoveryDefaults(cfg *ethconfig.Config, genesis common.Hash) {
 // The second return value is the full node instance, which may be nil if the
 // node is running as a light client.
 func RegisterEthService(stack *node.Node, cfg *ethconfig.Config) (ethapi.Backend, *eth.Ethereum) {
+	fmt.Println("+++++++++++ Starting Eth backend and Eth BC in cmd/geth/utils/flags.go +++++++++++")
 	if cfg.SyncMode == downloader.LightSync {
 		backend, err := les.New(stack, cfg)
 		if err != nil {

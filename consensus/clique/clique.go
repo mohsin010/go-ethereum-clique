@@ -190,7 +190,7 @@ type Clique struct {
 // signers set to the ones provided by the user.
 func New(config *params.CliqueConfig, db ethdb.Database) *Clique {
 	// Set any missing consensus parameters to their defaults
-	conf := *config
+	conf := *config //clique config in genesis block
 	if conf.Epoch == 0 {
 		conf.Epoch = epochLength
 	}
@@ -209,7 +209,7 @@ func New(config *params.CliqueConfig, db ethdb.Database) *Clique {
 
 // Author implements consensus.Engine, returning the Ethereum address recovered
 // from the signature in the header's extra-data section.
-func (c *Clique) Author(header *types.Header) (common.Address, error) {
+func (c *Clique) Author(header *types.Header) (common.Address, error) { //Author means block proposer
 	return ecrecover(header, c.signatures)
 }
 
@@ -513,7 +513,7 @@ func (c *Clique) Prepare(chain consensus.ChainHeaderReader, header *types.Header
 	if number%c.config.Epoch != 0 {
 		// Gather all the proposals that make sense voting on
 		addresses := make([]common.Address, 0, len(c.proposals))
-		for address, authorize := range c.proposals {
+		for address, authorize := range c.proposals { //console proposals and c (what is inside)
 			if snap.validVote(address, authorize) {
 				addresses = append(addresses, address)
 			}
@@ -565,16 +565,16 @@ func (c *Clique) Prepare(chain consensus.ChainHeaderReader, header *types.Header
 }
 
 // Finalize implements consensus.Engine. There is no post-transaction
-// consensus rules in clique, do nothing here.
+// consensus rules in clique, do nothing here. //miner reward could be implemented here like ethash
 func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, withdrawals []*types.Withdrawal) {
-	// No block rewards in PoA, so the state remains as is
+	// No block rewards in PoA, so the state remains as is -- Reward function can be called here
 }
 
 // FinalizeAndAssemble implements consensus.Engine, ensuring no uncles are set,
 // nor block rewards given, and returns the final block.
 func (c *Clique) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt, withdrawals []*types.Withdrawal) (*types.Block, error) {
 	if len(withdrawals) > 0 {
-		return nil, errors.New("clique does not support withdrawals")
+		return nil, errors.New("clique does not support withdrawals") //what is withdrawls
 	}
 	// Finalize block
 	c.Finalize(chain, header, state, txs, uncles, nil)
@@ -607,7 +607,10 @@ func (c *Clique) Seal(chain consensus.ChainHeaderReader, block *types.Block, res
 		return errUnknownBlock
 	}
 	// For 0-period chains, refuse to seal empty blocks (no reward but would spin sealing)
-	if c.config.Period == 0 && len(block.Transactions()) == 0 {
+	fmt.Println("Control before the seal empty block", "c.config.Period:", c.config.Period, "block.Transactions:", block.Transactions().Len())
+	// fmt.Println(block.Tr)
+	if c.config.Period == 0 && len(block.Transactions()) == 0 { //|| len(block.Transactions()) == 0
+		fmt.Println("---Control after the seal empty block----")
 		return errors.New("sealing paused while waiting for transactions")
 	}
 	// Don't hold the signer fields for the entire sealing procedure
@@ -620,11 +623,12 @@ func (c *Clique) Seal(chain consensus.ChainHeaderReader, block *types.Block, res
 	if err != nil {
 		return err
 	}
+	fmt.Println("+++++++++++ Authorized Signers", snap.Signers) //from where the signers are coming
 	if _, authorized := snap.Signers[signer]; !authorized {
 		return errUnauthorizedSigner
 	}
 	// If we're amongst the recent signers, wait for the next block
-	for seen, recent := range snap.Recents {
+	for seen, recent := range snap.Recents { //Error generation happening here, instead of error generation eligible signer should be selected
 		if recent == signer {
 			// Signer is among recents, only wait if the current block doesn't shift it out
 			if limit := uint64(len(snap.Signers)/2 + 1); number < limit || seen > number-limit {
@@ -708,7 +712,7 @@ func (c *Clique) APIs(chain consensus.ChainHeaderReader) []rpc.API {
 }
 
 // SealHash returns the hash of a block prior to it being sealed.
-func SealHash(header *types.Header) (hash common.Hash) {
+func SealHash(header *types.Header) (hash common.Hash) { //Creating Block Hash before sealing
 	hasher := sha3.NewLegacyKeccak256()
 	encodeSigHeader(hasher, header)
 	hasher.(crypto.KeccakState).Read(hash[:])

@@ -63,7 +63,7 @@ import (
 type Config = ethconfig.Config
 
 // Ethereum implements the Ethereum full node service.
-type Ethereum struct {
+type Ethereum struct { //major entities of ethereum network
 	config *ethconfig.Config
 
 	// Handlers
@@ -89,7 +89,7 @@ type Ethereum struct {
 	APIBackend *EthAPIBackend
 
 	miner     *miner.Miner
-	gasPrice  *big.Int
+	gasPrice  *big.Int //it is coming from miner config and being set in New function
 	etherbase common.Address
 
 	networkID     uint64
@@ -106,15 +106,23 @@ type Ethereum struct {
 // initialisation of the common Ethereum object)
 func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	// Ensure configuration values are compatible and sane
+	fmt.Println("+++++++ Ethereum is being created from Backend in eth/backend.go +++++++")
 	if config.SyncMode == downloader.LightSync {
 		return nil, errors.New("can't run eth.Ethereum in light sync mode, use les.LightEthereum")
 	}
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
-	if config.Miner.GasPrice == nil || config.Miner.GasPrice.Cmp(common.Big0) <= 0 {
-		log.Warn("Sanitizing invalid miner gas price", "provided", config.Miner.GasPrice, "updated", ethconfig.Defaults.Miner.GasPrice)
+	//if i put a boolean flag here that would be defined in eth/config.go. That will be used to enable/disable gas fee.
+	//Minimum Gas Price of Miner is Being Set Here.
+	fmt.Println("+++++++++++++ Setting Minimum Miner Gas Price, config.Miner.GasPrice :", config.Miner.GasPrice, ethconfig.Defaults.Miner.GasPrice, "+++++++++++++")
+	if config.Miner.GasPrice == nil || config.Miner.GasPrice.Cmp(common.Big0) <= 0 { //gas price by miner on creating new node client
+		log.Warn("Sanitizing invalid miner gas price", "provided", config.Miner.GasPrice, "updated", ethconfig.Defaults.Miner.GasPrice) // Both points to the same gas price
+		// if ethconfig.Defaults.GasStatus == true {
 		config.Miner.GasPrice = new(big.Int).Set(ethconfig.Defaults.Miner.GasPrice)
+		// } else {
+		// fmt.Println("++++++++++++++++++++ Gas is disabled by default ++++++++++++++++++++")
+		// }
 	}
 	if config.NoPruning && config.TrieDirtyCache > 0 {
 		if config.SnapshotCache > 0 {
@@ -141,6 +149,7 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 		return nil, err
 	}
 	engine, err := ethconfig.CreateConsensusEngine(chainConfig, chainDb)
+	fmt.Println("+++++++++ Consensus engine is created in eth/backend.go +++++++++")
 	if err != nil {
 		return nil, err
 	}
@@ -150,10 +159,10 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 		chainDb:           chainDb,
 		eventMux:          stack.EventMux(),
 		accountManager:    stack.AccountManager(),
-		engine:            engine,
+		engine:            engine, //consensus algorithm being used
 		closeBloomHandler: make(chan struct{}),
 		networkID:         config.NetworkId,
-		gasPrice:          config.Miner.GasPrice,
+		gasPrice:          config.Miner.GasPrice, //Gas price when creating new node instance.
 		etherbase:         config.Miner.Etherbase,
 		bloomRequests:     make(chan chan *bloombits.Retrieval),
 		bloomIndexer:      core.NewBloomIndexer(chainDb, params.BloomBitsBlocks, params.BloomConfirms),
@@ -201,6 +210,7 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 		overrides.OverrideVerkle = config.OverrideVerkle
 	}
 	eth.blockchain, err = core.NewBlockChain(chainDb, cacheConfig, config.Genesis, &overrides, eth.engine, vmConfig, eth.shouldPreserve, &config.TxLookupLimit)
+	fmt.Println("++++++++++++ Blockchain is Started in eth/backend.go ++++++++++++")
 	if err != nil {
 		return nil, err
 	}
@@ -208,6 +218,7 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = stack.ResolvePath(config.TxPool.Journal)
+		fmt.Println("++++++++++++ TxPool Journal is Feteched in eth/backend.go ++++++++++++")
 	}
 	legacyPool := legacypool.New(config.TxPool, eth.blockchain)
 
@@ -215,6 +226,7 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("++++++++++++ Started TxPool in eth/backend.go ++++++++++++")
 	// Permit the downloader to use the trie cache allowance during fast sync
 	cacheLimit := cacheConfig.TrieCleanLimit + cacheConfig.TrieDirtyLimit + cacheConfig.SnapshotLimit
 	if eth.handler, err = newHandler(&handlerConfig{
@@ -233,16 +245,17 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 
 	eth.miner = miner.New(eth, &config.Miner, eth.blockchain.Config(), eth.EventMux(), eth.engine, eth.isLocalBlock)
 	eth.miner.SetExtra(makeExtraData(config.Miner.ExtraData))
+	fmt.Println("++++++++++++ Started Miner in eth/backend.go, check gasprice here ++++++++++++")
 
 	eth.APIBackend = &EthAPIBackend{stack.Config().ExtRPCEnabled(), stack.Config().AllowUnprotectedTxs, eth, nil}
 	if eth.APIBackend.allowUnprotectedTxs {
 		log.Info("Unprotected transactions allowed")
 	}
-	gpoParams := config.GPO
+	gpoParams := config.GPO //check this
 	if gpoParams.Default == nil {
-		gpoParams.Default = config.Miner.GasPrice
+		gpoParams.Default = config.Miner.GasPrice //miner gas price is being setting to gpo
 	}
-	eth.APIBackend.gpo = gasprice.NewOracle(eth.APIBackend, gpoParams)
+	eth.APIBackend.gpo = gasprice.NewOracle(eth.APIBackend, gpoParams) //recommending gas price for new Transactions
 
 	// Setup DNS discovery iterators.
 	dnsclient := dnsdisc.NewClient(dnsdisc.Config{})
@@ -404,10 +417,12 @@ func (s *Ethereum) StartMining() error {
 	if !s.IsMining() {
 		// Propagate the initial price point to the transaction pool
 		s.lock.RLock()
-		price := s.gasPrice
+		price := s.gasPrice //Gas price is coming form miner through ethereum struct, being set to Ethereum in New function
 		s.lock.RUnlock()
-		s.txPool.SetGasTip(price)
-
+		// SetGasTip function updates the minimum price required by the subpool for a new
+		// transaction, and drops all transactions below this threshold.
+		s.txPool.SetGasTip(price) //gas tip being set
+		fmt.Println("+++++++++++++ Setting GasTip in StartMinig Func eth/backend.go ", price, "+++++++++++++")
 		// Configure the local mining address
 		eb, err := s.Etherbase()
 		if err != nil {

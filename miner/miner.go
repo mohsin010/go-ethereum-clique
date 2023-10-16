@@ -44,7 +44,7 @@ type Backend interface {
 }
 
 // Config is the configuration parameters of mining.
-type Config struct {
+type Config struct { //setting the gas price in the following DefaultConfig variable
 	Etherbase common.Address `toml:",omitempty"` // Public address for block mining rewards
 	ExtraData hexutil.Bytes  `toml:",omitempty"` // Block extra data set by the miner
 	GasFloor  uint64         // Target gas floor for mined blocks.
@@ -56,9 +56,9 @@ type Config struct {
 }
 
 // DefaultConfig contains default settings for miner.
-var DefaultConfig = Config{
+var DefaultConfig = Config{ //This is the default gas setting if deafult eth config is used
 	GasCeil:  30000000,
-	GasPrice: big.NewInt(params.GWei),
+	GasPrice: big.NewInt(params.NoPrice),
 
 	// The default recommit time is chosen as two seconds since
 	// consensus-layer usually will wait a half slot of time(6s)

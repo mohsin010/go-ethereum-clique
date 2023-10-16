@@ -233,7 +233,7 @@ func init() {
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 
-	app.Flags = flags.Merge(
+	app.Flags = flags.Merge( //CLI args are traced till here. How they are used in starting node?
 		nodeFlags,
 		rpcFlags,
 		consoleFlags,
@@ -319,6 +319,8 @@ func prepare(ctx *cli.Context) {
 // It creates a default node based on the command line arguments and runs it in
 // blocking mode, waiting for it to be shut down.
 func geth(ctx *cli.Context) error {
+	// myargs := ctx.Args()
+	fmt.Println("======================= Starting geth from cmd/geth/main.go =======================")
 	if args := ctx.Args().Slice(); len(args) > 0 {
 		return fmt.Errorf("invalid command: %q", args[0])
 	}
@@ -326,7 +328,7 @@ func geth(ctx *cli.Context) error {
 	prepare(ctx)
 	stack, backend := makeFullNode(ctx)
 	defer stack.Close()
-
+	fmt.Println("===================== Node is Created, Now Starting it =====================", ctx)
 	startNode(ctx, stack, backend, false)
 	stack.Wait()
 	return nil
@@ -420,8 +422,9 @@ func startNode(ctx *cli.Context, stack *node.Node, backend ethapi.Backend, isCon
 			utils.Fatalf("Ethereum service not running")
 		}
 		// Set the gas price to the limits from the CLI and start mining
-		gasprice := flags.GlobalBig(ctx, utils.MinerGasPriceFlag.Name)
-		ethBackend.TxPool().SetGasTip(gasprice)
+		gasprice := flags.GlobalBig(ctx, utils.MinerGasPriceFlag.Name) //Setting the gas price from command line
+		fmt.Println("++++++++++++ Starting Mining & Setting GasTip in cmd/geth/main.go : ", gasprice,  "++++++++++++")
+		ethBackend.TxPool().SetGasTip(gasprice) //Gas price is being set here
 		if err := ethBackend.StartMining(); err != nil {
 			utils.Fatalf("Failed to start mining: %v", err)
 		}

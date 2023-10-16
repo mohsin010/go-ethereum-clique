@@ -18,6 +18,7 @@ package gasprice
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"sync"
 
@@ -32,6 +33,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// File that holds gas price, setting the gas price oracle here
 const sampleNumber = 3 // Number of transactions sampled in a block
 
 var (
@@ -59,7 +61,7 @@ type OracleBackend interface {
 	SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription
 }
 
-// Oracle recommends gas prices based on the content of recent
+// Oracle recommends gas prices based on the content of recent //consider
 // blocks. Suitable for both light and full clients.
 type Oracle struct {
 	backend     OracleBackend
@@ -76,8 +78,8 @@ type Oracle struct {
 	historyCache *lru.Cache[cacheKey, processedFees]
 }
 
-// NewOracle returns a new gasprice oracle which can recommend suitable
-// gasprice for newly created transaction.
+// NewOracle returns a new gasprice oracle which can recommend suitable //consider
+// gasprice for newly created transaction. check the transactions in miner
 func NewOracle(backend OracleBackend, params Config) *Oracle {
 	blocks := params.Blocks
 	if blocks < 1 {
@@ -102,7 +104,7 @@ func NewOracle(backend OracleBackend, params Config) *Oracle {
 		ignorePrice = DefaultIgnorePrice
 		log.Warn("Sanitizing invalid gasprice oracle ignore price", "provided", params.IgnorePrice, "updated", ignorePrice)
 	} else if ignorePrice.Int64() > 0 {
-		log.Info("Gasprice oracle is ignoring threshold set", "threshold", ignorePrice)
+		log.Info("Gasprice oracle is ignoring threshold set", "threshold", ignorePrice) //consider
 	}
 	maxHeaderHistory := params.MaxHeaderHistory
 	if maxHeaderHistory < 1 {
@@ -218,7 +220,7 @@ func (oracle *Oracle) SuggestTipCap(ctx context.Context) (*big.Int, error) {
 	oracle.lastHead = headHash
 	oracle.lastPrice = price
 	oracle.cacheLock.Unlock()
-
+	fmt.Println("+++++ SuggestGasTip by Oracle +++++", price)
 	return new(big.Int).Set(price), nil
 }
 

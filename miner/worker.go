@@ -550,7 +550,7 @@ func (w *worker) mainLoop() {
 			} else {
 				// Special case, if the consensus engine is 0 period clique(dev mode),
 				// submit sealing work here since all empty submission will be rejected
-				// by clique. Of course the advance sealing(empty submission) is disabled.
+				// by clique. Of course the advance sealing(empty submission) is disabled...
 				if w.chainConfig.Clique != nil && w.chainConfig.Clique.Period == 0 {
 					w.commitWork(nil, time.Now().Unix())
 				}

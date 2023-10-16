@@ -53,7 +53,7 @@ type BlockChain interface {
 // resource constraints.
 type TxPool struct {
 	subpools []SubPool               // List of subpools for specialized transaction handling
-	subs     event.SubscriptionScope // Subscription scope to unscubscribe all on shutdown
+	subs     event.SubscriptionScope // Subscription scope to unscubscribe all on shutdown //spell mistake
 	quit     chan chan error         // Quit channel to tear down the head updater
 }
 
@@ -165,7 +165,7 @@ func (p *TxPool) loop(head *types.Header, chain BlockChain) {
 	errc <- nil
 }
 
-// SetGasTip updates the minimum gas tip required by the transaction pool for a
+// SetGasTip updates the minimum gas tip required by the transaction pool for a //consider
 // new transaction, and drops all transactions below this threshold.
 func (p *TxPool) SetGasTip(tip *big.Int) {
 	for _, subpool := range p.subpools {

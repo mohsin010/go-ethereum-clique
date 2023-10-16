@@ -18,7 +18,7 @@ package params
 
 import "math/big"
 
-const (
+const ( //Default gas constants
 	GasLimitBoundDivisor uint64 = 1024               // The bound divisor of the gas limit, used in update calculations.
 	MinGasLimit          uint64 = 5000               // Minimum the gas limit may ever be.
 	MaxGasLimit          uint64 = 0x7fffffffffffffff // Maximum the gas limit (2^63-1).
@@ -128,7 +128,7 @@ const (
 	MaxInitCodeSize = 2 * MaxCodeSize // Maximum initcode to permit in a creation transaction and create instructions
 
 	// Precompiled contract gas prices
-
+ 
 	EcrecoverGas        uint64 = 3000 // Elliptic curve sender recovery gas price
 	Sha256BaseGas       uint64 = 60   // Base price for a SHA256 operation
 	Sha256PerWordGas    uint64 = 12   // Per-word price for a SHA256 operation

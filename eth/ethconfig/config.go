@@ -19,6 +19,7 @@ package ethconfig
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -36,7 +37,7 @@ import (
 )
 
 // FullNodeGPO contains default gasprice oracle settings for full node.
-var FullNodeGPO = gasprice.Config{
+var FullNodeGPO = gasprice.Config{ //Default gas price
 	Blocks:           20,
 	Percentile:       60,
 	MaxHeaderHistory: 1024,
@@ -55,7 +56,7 @@ var LightClientGPO = gasprice.Config{
 	IgnorePrice:      gasprice.DefaultIgnorePrice,
 }
 
-// Defaults contains default settings for use on the Ethereum main net.
+// Defaults contains default settings for use on the Ethereum main net. //what is RPCGasCap
 var Defaults = Config{
 	SyncMode:           downloader.SnapSync,
 	NetworkId:          1,
@@ -67,12 +68,13 @@ var Defaults = Config{
 	TrieTimeout:        60 * time.Minute,
 	SnapshotCache:      102,
 	FilterLogCacheSize: 32,
-	Miner:              miner.DefaultConfig,
+	Miner:              miner.DefaultConfig, //going gas from here to 
 	TxPool:             legacypool.DefaultConfig,
 	RPCGasCap:          50000000,
 	RPCEVMTimeout:      5 * time.Second,
 	GPO:                FullNodeGPO,
 	RPCTxFeeCap:        1, // 1 ether
+	GasStatus:          false,
 }
 
 //go:generate go run github.com/fjl/gencodec -type Config -formats toml -out gen_config.go
@@ -128,11 +130,12 @@ type Config struct {
 	// Mining options
 	Miner miner.Config
 
+	GasStatus bool
 	// Transaction pool options
 	TxPool legacypool.Config
 
 	// Gas Price Oracle options
-	GPO gasprice.Config
+	GPO gasprice.Config //i think gas price is going from here
 
 	// Enables tracking of SHA3 preimages in the VM
 	EnablePreimageRecording bool
@@ -160,9 +163,11 @@ type Config struct {
 // CreateConsensusEngine creates a consensus engine for the given chain config.
 // Clique is allowed for now to live standalone, but ethash is forbidden and can
 // only exist on already merged networks.
+// Creating consensus engine here and loading genesis block json file config here
 func CreateConsensusEngine(config *params.ChainConfig, db ethdb.Database) (consensus.Engine, error) {
 	// If proof-of-authority is requested, set it up
 	if config.Clique != nil {
+		fmt.Println("++++++++++ Creating Consensus Engine Clique in eth/ethconfig/config.go ++++++++++")
 		return beacon.New(clique.New(config.Clique, db)), nil
 	}
 	// If defaulting to proof-of-work, enforce an already merged network since

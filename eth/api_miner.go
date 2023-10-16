@@ -57,7 +57,7 @@ func (api *MinerAPI) SetExtra(extra string) (bool, error) {
 	return true, nil
 }
 
-// SetGasPrice sets the minimum accepted gas price for the miner.
+// SetGasPrice sets the minimum accepted gas price for the miner. // i think it is not being used becase miner api is deprecated, ref to gth doc
 func (api *MinerAPI) SetGasPrice(gasPrice hexutil.Big) bool {
 	api.e.lock.Lock()
 	api.e.gasPrice = (*big.Int)(&gasPrice)
